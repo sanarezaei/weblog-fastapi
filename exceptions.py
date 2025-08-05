@@ -9,4 +9,8 @@ class UserNotFound(HTTPException):
         self.status_code = status.HTTP_404_NOT_FOUND
         self.detail = "User not found"
         
-    pass
+
+class UserAlreadyExists(HTTPException):
+    def __init__(self):
+        self.status_code = 400
+        self.detail = "user already exists!"
