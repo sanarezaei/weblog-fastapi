@@ -2,9 +2,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # from sqlalchemy.ext.asyncio import IntegrityError 
 
 from db.models import User
-from exceptions import UserNotFound, UserAlreadyExists
 from utils.secrets import password_manager
 from schema.output import RegisterOutput
+import exceptions
 
 import sqlalchemy as sa
 
@@ -21,7 +21,7 @@ class UsersOperation:
                 session.add(user)
                 await session.commit()  
             except Exception:
-                raise UserAlreadyExists
+                raise exceptions.UserAlreadyExists
             
         return RegisterOutput(username=user.username, id=user.id)
     
@@ -32,7 +32,7 @@ class UsersOperation:
             user_data  = await session.scalar(query)
         
         if user_data is None:
-            raise UserNotFound
+            raise exceptions.UserNotFound
         
         return user_data
     
@@ -47,7 +47,7 @@ class UsersOperation:
             user_data = await session.scalar(query)
 
             if user_data is None:
-                raise UserNotFound
+                raise exceptions.UserNotFound
             
             await session.execute(update_query)
             await session.commit()
@@ -66,3 +66,16 @@ class UsersOperation:
             await session.execute(delete_query)
             await session.commit()
 
+    async def login(self, username: str, password:str) -> str:
+        query = sa.select(User).where(
+            User.username==username
+            )
+        async with self.db_session as session:
+            user = await session.scalar(query)
+            if user is None:
+                raise exceptions.UsernameOrPasswordIncorrect
+        
+        if not password_manager.verify(password, user.password):
+            raise exceptions.UsernameOrPasswordIncorrect
+        
+        return "Yes"

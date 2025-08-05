@@ -23,8 +23,12 @@ async def register(
     return user
 
 @router.post("/login")
-async def login():
-    ...
+async def login(
+    db_session: Annotated[AsyncSession, Depends(get_db)],
+    data: RegisterInput = Body()
+):
+    token = await UsersOperation(db_session).login(data.username, data.password)
+    return token
 
 @router.get("/{username}/")
 async def get_user_profile(
