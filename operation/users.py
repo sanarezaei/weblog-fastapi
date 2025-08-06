@@ -1,9 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-# from sqlalchemy.ext.asyncio import IntegrityError 
+from sqlalchemy.exc import IntegrityError 
+from utils.jwt import JWTHandler
 
 from db.models import User
 from utils.secrets import password_manager
 from schema.output import RegisterOutput
+from schema.jwt import JWTResponsePayload
 import exceptions
 
 import sqlalchemy as sa
@@ -20,7 +22,7 @@ class UsersOperation:
             try:
                 session.add(user)
                 await session.commit()  
-            except Exception:
+            except IntegrityError:
                 raise exceptions.UserAlreadyExists
             
         return RegisterOutput(username=user.username, id=user.id)
@@ -55,18 +57,14 @@ class UsersOperation:
             user_data.username=new_username
             return user_data
         
-    async def user_delete_account(self, username: str, password: str) -> None:
-        delete_query = sa.delete(User).where(
-            User.username == username,
-            User.password == password
-            ) 
+    async def user_delete_account(self, username: str) -> None:
+        delete_query = sa.delete(User).where(User.username == username) 
         
-
         async with self.db_session as session:
             await session.execute(delete_query)
             await session.commit()
 
-    async def login(self, username: str, password:str) -> str:
+    async def login(self, username: str, password:str) -> JWTResponsePayload:
         query = sa.select(User).where(
             User.username==username
             )
@@ -78,4 +76,4 @@ class UsersOperation:
         if not password_manager.verify(password, user.password):
             raise exceptions.UsernameOrPasswordIncorrect
         
-        return "Yes"
+        return JWTHandler.generate(username)

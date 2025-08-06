@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class RegisterInput(BaseModel):
+class UserInput(BaseModel):
     username: str 
     password: str
 
@@ -10,4 +10,4 @@ class UpdateUserProfileInput(BaseModel):
 
 class DeleteUserAccountInput(BaseModel):
     username: str 
-    password: str 
+
